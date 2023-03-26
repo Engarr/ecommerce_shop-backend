@@ -1,8 +1,12 @@
 const User = require('../models/user');
 const bcrypt = require('bcrypt');
+const { validationResult } = require('express-validator');
 
 exports.signup = async (req, res, next) => {
-	console.log(req);
+	const error = validationResult(req);
+	if (!error.isEmpty()) {
+		return res.status(422).json({ errors: error.array() });
+	}
 	const name = req.body.name;
 	const email = req.body.email;
 	const password = req.body.password;
