@@ -40,4 +40,13 @@ router.put(
 	authControllers.signup
 );
 
+router.post(
+	'/login',
+	[
+		body('email').isEmail().withMessage('Please enter a valid email.'),
+		body('password', 'This field cannot be empty').trim().not().isEmpty(),
+	],
+	authControllers.login
+);
+
 module.exports = router;
