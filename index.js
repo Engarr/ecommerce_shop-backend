@@ -6,6 +6,7 @@ const bodyParser = require('body-parser');
 require('dotenv').config();
 
 const authRoutes = require('./router/auth');
+const feedRoutes = require('./router/feed');
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -20,6 +21,7 @@ app.use((req, res, next) => {
 	next();
 });
 app.use('/auth', authRoutes);
+app.use('/feed', feedRoutes);
 app.use((error, req, res, next) => {
 	console.log(error);
 	const status = error.satusCode || 500;
