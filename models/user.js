@@ -19,6 +19,9 @@ const userSchema = new Schema(
 			type: Boolean,
 			required: true,
 		},
+		productsId:{
+			type: String,
+		}
 	},
 	{
 		timestamps: true,
