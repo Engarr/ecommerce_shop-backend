@@ -1,5 +1,10 @@
+const fs = require('fs');
+const path = require('path');
 const User = require('../models/user');
 const Product = require('../models/product');
+const { default: mongoose } = require('mongoose');
+const multer = require('multer');
+const upload = multer({ dest: '/uploads/' });
 
 exports.getUser = async (req, res, next) => {
 	const userId = req.params.userId;
@@ -21,6 +26,12 @@ exports.getUser = async (req, res, next) => {
 };
 
 exports.postAddProduct = async (req, res, next) => {
+	if (!req.file) {
+		const error = new Error('No image provided.');
+		error.statusCode = 422;
+		throw error;
+	}
+	const imageUrl = req.file.path;
 	const name = req.body.name;
 	const category = req.body.category;
 	const price = req.body.price;
@@ -29,14 +40,16 @@ exports.postAddProduct = async (req, res, next) => {
 
 	try {
 		const product = new Product({
+			_id: new mongoose.Types.ObjectId(),
 			name: name,
 			price: price,
 			description: description,
 			category: category,
 			creator: userId,
+			imageUrl: imageUrl,
 		});
-		await product.save();
-		res.status(200).json({ message: 'product has been created' });
+		const result = await product.save();
+		res.status(200).json({ message: 'product has been created', data: result });
 	} catch (err) {
 		if (!err) {
 			err.statusCode = 500;

@@ -24,6 +24,7 @@ const productSchema = new mongoose.Schema(
 			ref: 'User',
 			required: true,
 		},
+		imageUrl: [{ type: String, required: true }],
 	},
 	{
 		timestamps: true,
