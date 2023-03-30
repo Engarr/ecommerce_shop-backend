@@ -19,9 +19,12 @@ const userSchema = new Schema(
 			type: Boolean,
 			required: true,
 		},
-		productsId:{
-			type: String,
-		}
+		products: [
+			{
+				type: Schema.Types.ObjectId,
+				ref: 'Product',
+			},
+		],
 	},
 	{
 		timestamps: true,

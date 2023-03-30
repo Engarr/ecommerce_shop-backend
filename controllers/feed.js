@@ -3,8 +3,6 @@ const path = require('path');
 const User = require('../models/user');
 const Product = require('../models/product');
 const { default: mongoose } = require('mongoose');
-const multer = require('multer');
-const upload = multer({ dest: '/uploads/' });
 
 exports.getUser = async (req, res, next) => {
 	const userId = req.params.userId;
@@ -31,24 +29,27 @@ exports.postAddProduct = async (req, res, next) => {
 		error.statusCode = 422;
 		throw error;
 	}
-	const imageUrl = req.file.path;
+	const imageUrl = req.file.path.replace('\\', '/');
 	const name = req.body.name;
 	const category = req.body.category;
 	const price = req.body.price;
 	const description = req.body.description;
 	const userId = req.body.userId;
 
+	const product = new Product({
+		_id: new mongoose.Types.ObjectId(),
+		name: name,
+		price: price,
+		description: description,
+		category: category,
+		creator: userId,
+		imageUrl: imageUrl,
+	});
 	try {
-		const product = new Product({
-			_id: new mongoose.Types.ObjectId(),
-			name: name,
-			price: price,
-			description: description,
-			category: category,
-			creator: userId,
-			imageUrl: imageUrl,
-		});
 		const result = await product.save();
+		const user = await User.findById(userId);
+		user.products.push(product._id);
+		await user.save();
 		res.status(200).json({ message: 'product has been created', data: result });
 	} catch (err) {
 		if (!err) {
