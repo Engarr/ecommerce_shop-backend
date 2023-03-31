@@ -29,12 +29,14 @@ exports.getUser = async (req, res, next) => {
 };
 
 exports.postAddProduct = async (req, res, next) => {
-	if (!req.file) {
-		const error = new Error('No image provided.');
+	const images = req.files;
+	console.log(images);
+	if (!images || images.length === 0) {
+		const error = new Error('No images provided.');
 		error.statusCode = 422;
 		throw error;
 	}
-	const imageUrl = req.file.path.replace('\\', '/');
+	const imagePaths = images.map((image) => image.path.replace('\\', '/'));
 	const name = req.body.name;
 	const category = req.body.category;
 	const price = req.body.price;
@@ -48,7 +50,7 @@ exports.postAddProduct = async (req, res, next) => {
 		description: description,
 		category: category,
 		creator: userId,
-		imageUrl: imageUrl,
+		imageUrl: imagePaths,
 	});
 	try {
 		const result = await product.save();
@@ -80,11 +82,27 @@ exports.getProducts = async (req, res, next) => {
 
 exports.getCategoryProducts = async (req, res, next) => {
 	const category = req.params.category;
+
 	try {
 		const products = await Product.find({ category: category });
 		res
 			.status(200)
 			.json({ message: 'Fetched products successfully.', products: products });
+	} catch (err) {
+		if (!err.statusCode) {
+			err.statusCode = 500;
+		}
+		next(err);
+	}
+};
+
+exports.getProduct = async (req, res, next) => {
+	const productId = req.params.productId;
+	try {
+		const product = await Product.findById(productId);
+		res
+			.status(200)
+			.json({ message: 'Fetched product successfully.', product: product });
 	} catch (err) {
 		if (!err.statusCode) {
 			err.statusCode = 500;
