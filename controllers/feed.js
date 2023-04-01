@@ -30,7 +30,7 @@ exports.getUser = async (req, res, next) => {
 
 exports.postAddProduct = async (req, res, next) => {
 	const images = req.files;
-	console.log(images);
+
 	if (!images || images.length === 0) {
 		const error = new Error('No images provided.');
 		error.statusCode = 422;
@@ -58,6 +58,55 @@ exports.postAddProduct = async (req, res, next) => {
 		user.products.push(product._id);
 		await user.save();
 		res.status(200).json({ message: 'product has been created', data: result });
+	} catch (err) {
+		if (!err) {
+			err.statusCode = 500;
+		}
+		next(err);
+	}
+};
+exports.editProduct = async (req, res, next) => {
+	const productId = req.params.productId;
+	const name = req.body.name;
+	const category = req.body.category;
+	const price = req.body.price;
+	const description = req.body.description;
+	const userId = req.body.userId;
+	let images = req.body.imageUrl;
+	let imagePaths = [];
+	try {
+		if (req.files) {
+			images = req.files;
+			imagePaths = images.map((image) => image.path.replace('\\', '/'));
+		}
+		if (!images) {
+			const error = new Error('No file picked.');
+			error.statusCode = 422;
+			throw error;
+		}
+		const product = await Product.findById(productId);
+		if (!product) {
+			const error = new Error('Could not find product.');
+			error.statusCode = 404;
+			throw error;
+		}
+		if (product.creator.toString() !== userId) {
+			const error = new Error('Not authorized!');
+			error.statusCode = 403;
+			throw error;
+		}
+		for (let i = 0; i < product.imageUrl.length; i++) {
+			if (images[i] !== product.imageUrl[i]) {
+				clearImage(product.imageUrl[i]);
+			}
+		}
+		product.name = name;
+		product.imageUrl = imagePaths;
+		product.description = description;
+		product.category = category;
+		product.price = price;
+		const result = await product.save();
+		res.status(200).json({ message: 'Product updated!', product: result });
 	} catch (err) {
 		if (!err) {
 			err.statusCode = 500;
@@ -109,4 +158,9 @@ exports.getProduct = async (req, res, next) => {
 		}
 		next(err);
 	}
+};
+
+const clearImage = (filePath) => {
+	filePath = path.join(__dirname, '..', filePath);
+	fs.unlink(filePath, (err) => console.log(err));
 };
