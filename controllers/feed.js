@@ -42,7 +42,6 @@ exports.postAddProduct = async (req, res, next) => {
 	const price = req.body.price;
 	const description = req.body.description;
 	const userId = req.body.userId;
-
 	const product = new Product({
 		_id: new mongoose.Types.ObjectId(),
 		name: name,
@@ -72,18 +71,30 @@ exports.editProduct = async (req, res, next) => {
 	const price = req.body.price;
 	const description = req.body.description;
 	const userId = req.body.userId;
-	let images = req.body.imageUrl;
-	let imagePaths = [];
-	try {
-		if (req.files) {
-			images = req.files;
-			imagePaths = images.map((image) => image.path.replace('\\', '/'));
+	let imagefilesPaths = [];
+	let imagesFile;
+	let newImages = [];
+	let images = req.body.images;
+	if (images) {
+		newImages = images;
+	}
+
+	if (req.files) {
+		imagesFile = req.files;
+		imagefilesPaths = imagesFile.map((image) => image.path.replace('\\', '/'));
+		if (images) {
+			newImages = imagefilesPaths.concat(images);
 		}
-		if (!images) {
+		newImages = imagefilesPaths;
+	}
+
+	try {
+		if (!images && !imagesFile) {
 			const error = new Error('No file picked.');
 			error.statusCode = 422;
 			throw error;
 		}
+
 		const product = await Product.findById(productId);
 		if (!product) {
 			const error = new Error('Could not find product.');
@@ -95,13 +106,15 @@ exports.editProduct = async (req, res, next) => {
 			error.statusCode = 403;
 			throw error;
 		}
+
 		for (let i = 0; i < product.imageUrl.length; i++) {
-			if (images[i] !== product.imageUrl[i]) {
+			if (newImages[i] !== product?.imageUrl[i]) {
 				clearImage(product.imageUrl[i]);
 			}
 		}
+
 		product.name = name;
-		product.imageUrl = imagePaths;
+		product.imageUrl = newImages;
 		product.description = description;
 		product.category = category;
 		product.price = price;
