@@ -3,6 +3,7 @@ const path = require('path');
 const User = require('../models/user');
 const Product = require('../models/product');
 const { default: mongoose } = require('mongoose');
+const { validationResult } = require('express-validator');
 
 exports.getUser = async (req, res, next) => {
 	const userId = req.params.userId;
@@ -29,6 +30,10 @@ exports.getUser = async (req, res, next) => {
 };
 
 exports.postAddProduct = async (req, res, next) => {
+	const error = validationResult(req);
+	if (!error.isEmpty()) {
+		return res.status(422).json({ errors: error.array() });
+	}
 	const images = req.files;
 
 	if (!images || images.length === 0) {
