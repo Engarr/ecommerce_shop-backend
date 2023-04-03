@@ -83,9 +83,10 @@ exports.editProduct = async (req, res, next) => {
 		imagesFile = req.files;
 		imagefilesPaths = imagesFile.map((image) => image.path.replace('\\', '/'));
 		if (images) {
-			newImages = imagefilesPaths.concat(images);
+			newImages = images.concat(imagefilesPaths);
+		} else {
+			newImages = imagefilesPaths;
 		}
-		newImages = imagefilesPaths;
 	}
 
 	try {
@@ -165,6 +166,37 @@ exports.getProduct = async (req, res, next) => {
 		res
 			.status(200)
 			.json({ message: 'Fetched product successfully.', product: product });
+	} catch (err) {
+		if (!err.statusCode) {
+			err.statusCode = 500;
+		}
+		next(err);
+	}
+};
+
+exports.deleteProduct = async (req, res, next) => {
+	const productId = req.params.productId;
+	const userId = req.header('X-User-Id');
+	try {
+		const product = await Product.findById(productId);
+		if (!product) {
+			const error = new Error('Could not find product');
+			error.statusCode = 404;
+			throw error;
+		}
+		if (product.creator.toString() !== userId.toString()) {
+			const error = new Error('Not authorized!');
+			error.statusCode = 403;
+			throw error;
+		}
+		for (let i = 0; i < product.imageUrl.length; i++) {
+			clearImage(product.imageUrl[i]);
+		}
+		const result = await Product.findByIdAndRemove(productId);
+		const user = await User.findById(req.userId);
+		await user.products.pull(productId);
+		await user.save();
+		res.status(200).json({ message: 'Product deleted.' });
 	} catch (err) {
 		if (!err.statusCode) {
 			err.statusCode = 500;
