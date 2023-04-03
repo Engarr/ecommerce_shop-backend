@@ -6,9 +6,15 @@ const { default: mongoose } = require('mongoose');
 const { validationResult } = require('express-validator');
 
 exports.getUser = async (req, res, next) => {
+	const userIdToken = req.userId;
 	const userId = req.params.userId;
 	try {
-		const user = await User.findById(userId);
+		if (userIdToken !== userId) {
+			const error = new Error('Not authorized!');
+			error.statusCode = 403;
+			throw error;
+		}
+		const user = await User.findById(userIdToken);
 
 		if (!user) {
 			const error = new Error('Could not find user');
@@ -70,12 +76,16 @@ exports.postAddProduct = async (req, res, next) => {
 	}
 };
 exports.editProduct = async (req, res, next) => {
+	const error = validationResult(req);
+	if (!error.isEmpty()) {
+		return res.status(422).json({ errors: error.array() });
+	}
 	const productId = req.params.productId;
 	const name = req.body.name;
 	const category = req.body.category;
 	const price = req.body.price;
 	const description = req.body.description;
-	const userId = req.body.userId;
+	const userId = req.userId;
 	let imagefilesPaths = [];
 	let imagesFile;
 	let newImages = [];
