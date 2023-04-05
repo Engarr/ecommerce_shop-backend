@@ -63,13 +63,74 @@ exports.login = async (req, res, next) => {
 				name: loadedUser.name,
 			},
 			process.env.SECRET_TOKEN,
-			{ expiresIn: '1h' }
+			{ expiresIn: '100h' }
 		);
 		res.status(200).json({
 			token: token,
 			userId: loadedUser._id.toString(),
 			name: loadedUser.name,
 		});
+	} catch (err) {
+		if (!err) {
+			err.statusCode = 500;
+		}
+		next(err);
+	}
+};
+
+exports.changeData = async (req, res, next) => {
+	const formType = req.body.formType;
+	const userId = req.userId;
+	let email;
+	let password;
+
+	if (formType === 'changePassword') {
+		email = req.body.data.email;
+		password = req.body.data.newPassword;
+	} else if (formType === 'changeEmail') {
+		email = req.body.data.newEmail;
+		password = req.body.data.password;
+	}
+	try {
+		if (formType === 'changePassword') {
+			const user = await User.findOne({ email: email });
+			if (!user) {
+				const error = new Error('Could not find user with that email');
+				error.statusCode = 401;
+				throw error;
+			}
+
+			if (user._id.toString() !== userId.toString()) {
+				const error = new Error('Not authorized!');
+				error.statusCode = 401;
+				throw error;
+			}
+
+			const hashedPassword = await bcrypt.hash(password, 12);
+			user.password = hashedPassword;
+			await user.save();
+			res
+				.status(200)
+				.json({ message: 'Password has been succesfully changed' });
+		}
+		if (formType === 'changeEmail') {
+			const user = await User.findById(userId);
+			if (!user) {
+				const error = new Error('Could not find user with that email');
+				error.statusCode = 401;
+				throw error;
+			}
+			const userPassword = user.password;
+			const isEqual = await bcrypt.compare(password, userPassword);
+			if (!isEqual) {
+				const error = new Error('Wrong password!');
+				error.statusCode = 401;
+				throw error;
+			}
+			user.email = email;
+			await user.save();
+			res.status(200).json({ message: 'Email has been succesfully changed' });
+		}
 	} catch (err) {
 		if (!err) {
 			err.statusCode = 500;
