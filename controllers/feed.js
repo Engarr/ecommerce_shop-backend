@@ -220,6 +220,22 @@ exports.deleteProduct = async (req, res, next) => {
 	}
 };
 
+exports.findProduct = async (req, res, next) => {
+	const searchQuery = req.params.value;
+	const searchRegex = new RegExp(searchQuery, 'i');
+
+	try {
+		const products = await Product.find({ name: { $regex: searchRegex } });
+
+		res.status(200).json({ products: products });
+	} catch (err) {
+		if (!err.statusCode) {
+			err.statusCode = 500;
+		}
+		next(err);
+	}
+};
+
 const clearImage = (filePath) => {
 	filePath = path.join(__dirname, '..', filePath);
 	fs.unlink(filePath, (err) => console.log(err));

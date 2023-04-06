@@ -79,14 +79,19 @@ exports.login = async (req, res, next) => {
 };
 
 exports.changeData = async (req, res, next) => {
+	const error = validationResult(req);
+	if (!error.isEmpty()) {
+		return res.status(422).json({ errors: error.array() });
+	}
 	const formType = req.body.formType;
 	const userId = req.userId;
+
 	let email;
 	let password;
 
 	if (formType === 'changePassword') {
-		email = req.body.data.email;
-		password = req.body.data.newPassword;
+		email = req.body.email;
+		password = req.body.password;
 	} else if (formType === 'changeEmail') {
 		email = req.body.data.newEmail;
 		password = req.body.data.password;
@@ -115,6 +120,7 @@ exports.changeData = async (req, res, next) => {
 		}
 		if (formType === 'changeEmail') {
 			const user = await User.findById(userId);
+
 			if (!user) {
 				const error = new Error('Could not find user with that email');
 				error.statusCode = 401;

@@ -49,6 +49,14 @@ router.post(
 	],
 	authControllers.login
 );
-router.patch('/change', isAuth, authControllers.changeData);
+router.patch(
+	'/change',
+	[
+		body('email').isEmail().withMessage('Please enter a valid email.'),
+		body('password', 'This field cannot be empty').trim().not().isEmpty(),
+	],
+	isAuth,
+	authControllers.changeData
+);
 
 module.exports = router;

@@ -50,5 +50,6 @@ router.put(
 	feedController.editProduct
 );
 router.delete('/product/:productId', isAuth, feedController.deleteProduct);
+router.get('/search/:value', feedController.findProduct);
 
 module.exports = router;
