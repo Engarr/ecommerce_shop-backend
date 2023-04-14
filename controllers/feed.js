@@ -6,8 +6,11 @@ const { default: mongoose } = require('mongoose');
 const { validationResult } = require('express-validator');
 
 exports.getUser = async (req, res, next) => {
+	const currentPage = req.query.page;
+	const perPage = 2;
 	const userIdToken = req.userId;
 	const userId = req.params.userId;
+
 	try {
 		if (userIdToken !== userId) {
 			const error = new Error('Not authorized!');
@@ -22,11 +25,19 @@ exports.getUser = async (req, res, next) => {
 			throw error;
 		}
 		const userProductsId = user.products;
-		const products = await Product.find({ _id: { $in: userProductsId } });
+		const totalProducts = await Product.find({
+			_id: { $in: userProductsId },
+		}).countDocuments();
+		const products = await Product.find({ _id: { $in: userProductsId } })
+			.skip((currentPage - 1) * perPage)
+			.limit(perPage);
 
-		res
-			.status(200)
-			.json({ message: 'user fetched', userData: user, products: products });
+		res.status(200).json({
+			message: 'user fetched',
+			userData: user,
+			products: products,
+			totalProducts: totalProducts,
+		});
 	} catch (err) {
 		if (!err) {
 			err.statusCode = 500;
